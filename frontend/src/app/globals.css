@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%; /* Zinc 50 */
+    --foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%; /* Slate 800 */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 240 4.8% 95.9%; /* Zinc 100 */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --border: 240 5.9% 90%; /* Zinc 200 */
+    --input: 240 5.9% 90%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.3rem; /* Bordas um pouco mais quadradas para padrão enterprise */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    /* Outras definições do dark mode... */
+  }
+}
+
+@layer base {
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: sans-serif;
+  }
+}

@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  NURSE
+  RECEPTION
+  PHARMACY
+  FINANCE
+}
+
+enum ConsentStatus {
+  GRANTED
+  REVOKED
+}
+
+enum EncounterStatus {
+  TRIAGE
+  WAITING
+  IN_PROGRESS
+  DISCHARGED
+  ADMITTED
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+}
+
+enum AuditAction {
+  READ
+  CREATE
+  UPDATE
+  DELETE
+  EXPORT
+}
+
+model User {
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  password_hash    String
+  role             Role
+  crm_coren        String?
+  active           Boolean           @default(true)
+  
+  audit_logs       AuditLog[]
+  data_sharing_logs DataSharingLog[]
+  encounters       Encounter[]
+  
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+}
+
+model Patient {
+  id               String            @id @default(uuid())
+  full_name        String
+  cpf              String            @unique // Armazenado com criptografia AES-256 no nível de serviço
+  birth_date       DateTime
+  mother_name      String
+  phone            String            // Armazenado com criptografia AES-256
+  
+  consents         Consent[]
+  encounters       Encounter[]
+  data_sharing_logs DataSharingLog[]
+  
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+}
+
+model Consent {
+  id               String            @id @default(uuid())
+  patient          Patient           @relation(fields: [patient_id], references: [id])
+  patient_id       String
+  term_version     String
+  status           ConsentStatus
+  ip_address       String
+  method           String            // Ex: 'tablet_recepcao'
+  
+  timestamp        DateTime          @default(now())
+}
+
+model Encounter {
+  id               String            @id @default(uuid())
+  patient          Patient           @relation(fields: [patient_id], references: [id])
+  patient_id       String
+  doctor           User?             @relation(fields: [doctor_id], references: [id])
+  doctor_id        String?
+  
+  status           EncounterStatus   @default(TRIAGE)
+  manchester_color String?           // 'RED', 'ORANGE', 'YELLOW', 'GREEN', 'BLUE'
+  clinical_notes   String?           // Armazenado com criptografia AES-256
+  
+  started_at       DateTime          @default(now())
+  ended_at         DateTime?
+  
+  beds             Bed[]
+}
+
+model Bed {
+  id               String            @id @default(uuid())
+  code             String            @unique // Ex: 'UTI-01'
+  status           BedStatus         @default(AVAILABLE)
+  
+  current_encounter Encounter?       @relation(fields: [current_encounter_id], references: [id])
+  current_encounter_id String?
+}
+
+model AuditLog {
+  id               String            @id @default(uuid())
+  user             User              @relation(fields: [user_id], references: [id])
+  user_id          String
+  
+  action           AuditAction
+  table_name       String
+  record_id        String
+  old_values       Json?             // JSONB
+  new_values       Json?             // JSONB
+  ip_address       String
+  
+  timestamp        DateTime          @default(now())
+}
+
+model DataSharingLog {
+  id               String            @id @default(uuid())
+  patient          Patient           @relation(fields: [patient_id], references: [id])
+  patient_id       String
+  
+  destination      String            // Ex: 'Convenio_X'
+  reason           String
+  
+  user             User              @relation(fields: [user_id], references: [id])
+  user_id          String
+  
+  shared_at        DateTime          @default(now())
+}
